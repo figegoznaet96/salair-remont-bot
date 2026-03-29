@@ -1,7 +1,7 @@
 import logging
 
 # ==================== НАСТРОЙКИ БОТА ====================
-TOKEN = "8636454027:AAGjKb_OTie2rUGh6yXd1m8MydzYhFeFa0Y"
+TOKEN = "8636454027:AAHAoooVrvA-_oQLb2jXzWE_drXQz-CLp8o"
 MECHANIC_ID = 1093924638
 LOGIST_IDS = [8504590692]          # можно добавить ещё через запятую
 
