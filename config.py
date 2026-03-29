@@ -1,15 +1,14 @@
 import logging
 import os
 
-# === DEBUG — покажет, что именно подгружается ===
-print("=== DEBUG RAILWAY ===")
-print("TOKEN:", "✅ SET" if os.getenv("TOKEN") else "❌ MISSING")
-print("MECHANIC_ID:", os.getenv("MECHANIC_ID"))
-print("LOGIST_IDS:", os.getenv("LOGIST_IDS"))
-print("=====================")
+print("=== FULL ENV FROM RAILWAY ===")
+for key, value in os.environ.items():
+    if key in ["TOKEN", "MECHANIC_ID", "LOGIST_IDS"]:
+        print(f"{key} = {value}")
+print("=============================")
 
 TOKEN = os.getenv("TOKEN")
-MECHANIC_ID = int(os.getenv("MECHANIC_ID") or 0)      # 0 — если вдруг None
+MECHANIC_ID = int(os.getenv("MECHANIC_ID") or 0)
 LOGIST_IDS = [int(x) for x in os.getenv("LOGIST_IDS", "").split(",") if x]
 
 MACHINES = [
