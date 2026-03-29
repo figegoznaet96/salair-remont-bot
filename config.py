@@ -1,9 +1,16 @@
 import logging
 import os
 
+# === DEBUG — покажет, что именно подгружается ===
+print("=== DEBUG RAILWAY ===")
+print("TOKEN:", "✅ SET" if os.getenv("TOKEN") else "❌ MISSING")
+print("MECHANIC_ID:", os.getenv("MECHANIC_ID"))
+print("LOGIST_IDS:", os.getenv("LOGIST_IDS"))
+print("=====================")
+
 TOKEN = os.getenv("TOKEN")
-MECHANIC_ID = int(os.getenv("MECHANIC_ID"))
-LOGIST_IDS = list(map(int, os.getenv("LOGIST_IDS", "").split(",")))
+MECHANIC_ID = int(os.getenv("MECHANIC_ID") or 0)      # 0 — если вдруг None
+LOGIST_IDS = [int(x) for x in os.getenv("LOGIST_IDS", "").split(",") if x]
 
 MACHINES = [
     "КамАЗ А123 ВЕ 77",
@@ -13,7 +20,6 @@ MACHINES = [
     "КамАЗ 6520",
     "Volvo FM-13",
     "Другая машина",
-    # Добавляй сюда свои машины
 ]
 
 logging.basicConfig(level=logging.INFO)
