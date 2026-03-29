@@ -18,8 +18,7 @@ def start(message: Message):
     user_data[chat_id] = {}
     bot.send_message(
         chat_id,
-        "👋 Добро пожаловать, водитель!\n\n"
-        "Сначала выберите свою машину:",
+        "👋 Добро пожаловать, водитель!\n\nСначала выберите свою машину:",
         reply_markup=cars_keyboard()
     )
 
@@ -39,7 +38,6 @@ def callback_handler(call: CallbackQuery):
         )
         return
 
-    # Выбор машины
     if data.startswith("car_"):
         car = data[4:]
         user_data[chat_id]["car"] = car
@@ -51,7 +49,6 @@ def callback_handler(call: CallbackQuery):
         bot.send_message(chat_id, "Выберите тип заявки:", reply_markup=main_menu())
         return
 
-    # Выбор типа заявки
     if data.startswith("type_"):
         if data == "type_to":
             user_state[chat_id] = "waiting_mileage"
@@ -92,34 +89,78 @@ def handle_text(message: Message):
 
     elif state == "waiting_city":
         user_data[chat_id]["city"] = message.text.strip()
+        user_data[chat_id]["photos"] = []                    # список для нескольких фото
+        user_state[chat_id] = "waiting_photo"
 
-        d = user_data[chat_id]
-        now = datetime.now().strftime("%d.%m.%Y %H:%M")
-        text = f"🚨 НОВАЯ ЗАЯВКА\n\nТип: {d['type']}\n"
-        text += f"Водитель: @{message.from_user.username or 'без_юзернейма'} (ID: {message.from_user.id})\n"
-        text += f"Машина: {d.get('car', 'Не выбрана')}\n"
-        text += f"Город: {d['city']}\n"
-        if "mileage" in d:
-            text += f"Пробег: {d['mileage']} км\n"
-        if "description" in d:
-            text += f"Описание: {d['description']}\n"
-        text += f"\nОтправлено: {now}"
-
-        for admin_id in [MECHANIC_ID] + LOGIST_IDS:
-            try:
-                bot.send_message(admin_id, text)
-            except Exception as e:
-                logger.error(f"Ошибка отправки: {e}")
-
+        markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+        markup.row("Готово", "Без фото")
         bot.send_message(
             chat_id,
-            "✅ Заявка успешно отправлена!\nМеханик свяжется с вами в ближайшее время.",
-            reply_markup=back_to_menu()
+            "📸 Прикрепите фото к заявке (можно несколько).\n"
+            "Когда закончите — нажмите «Готово» или «Без фото»:",
+            reply_markup=markup
         )
-        user_state[chat_id] = None
 
     else:
         bot.send_message(chat_id, "Пожалуйста, используйте кнопки 👇", reply_markup=cars_keyboard())
+
+
+@bot.message_handler(content_types=['photo'])
+def handle_photo(message: Message):
+    chat_id = message.chat.id
+    if user_state.get(chat_id) == "waiting_photo":
+        photo_id = message.photo[-1].file_id
+        user_data[chat_id]["photos"].append(photo_id)
+        count = len(user_data[chat_id]["photos"])
+        bot.send_message(chat_id, f"✅ Фото добавлено ({count} шт.)")
+
+
+@bot.message_handler(content_types=['text'])
+def handle_photo_buttons(message: Message):
+    chat_id = message.chat.id
+    if user_state.get(chat_id) != "waiting_photo":
+        return
+
+    if message.text == "Готово" or message.text == "Без фото":
+        user_data[chat_id]["photo"] = user_data[chat_id]["photos"] if user_data[chat_id]["photos"] else None
+        send_application(chat_id, message)
+
+
+def send_application(chat_id, message):
+    d = user_data[chat_id]
+    now = datetime.now().strftime("%d.%m.%Y %H:%M")
+
+    text = f"🚨 НОВАЯ ЗАЯВКА\n\nТип: {d['type']}\n"
+    text += f"Водитель: @{message.from_user.username or 'без_юзернейма'} (ID: {message.from_user.id})\n"
+    text += f"Машина: {d.get('car', 'Не выбрана')}\n"
+    text += f"Город: {d['city']}\n"
+    if "mileage" in d:
+        text += f"Пробег: {d['mileage']} км\n"
+    if "description" in d:
+        text += f"Описание: {d['description']}\n"
+    text += f"\nОтправлено: {now}"
+
+    # Отправляем админам
+    for admin_id in [MECHANIC_ID] + LOGIST_IDS:
+        try:
+            if d.get("photo"):                     # несколько фото
+                for i, photo_id in enumerate(d["photo"]):
+                    if i == 0:
+                        bot.send_photo(admin_id, photo_id, caption=text)
+                    else:
+                        bot.send_photo(admin_id, photo_id)
+            else:
+                bot.send_message(admin_id, text)
+        except Exception as e:
+            logger.error(f"Ошибка отправки админу {admin_id}: {e}")
+
+    bot.send_message(
+        chat_id,
+        "✅ Заявка успешно отправлена!\nМеханик свяжется с вами в ближайшее время.",
+        reply_markup=back_to_menu()
+    )
+    user_state[chat_id] = None
+    bot.send_message(chat_id, " ", reply_markup=telebot.types.ReplyKeyboardRemove())
 
 
 if __name__ == "__main__":
