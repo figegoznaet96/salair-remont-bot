@@ -1,15 +1,9 @@
 import logging
-import os
 
-print("=== FULL ENV FROM RAILWAY ===")
-for key, value in os.environ.items():
-    if key in ["TOKEN", "MECHANIC_ID", "LOGIST_IDS"]:
-        print(f"{key} = {value}")
-print("=============================")
-
-TOKEN = os.getenv("TOKEN")
-MECHANIC_ID = int(os.getenv("MECHANIC_ID") or 0)
-LOGIST_IDS = [int(x) for x in os.getenv("LOGIST_IDS", "").split(",") if x]
+# ==================== НАСТРОЙКИ БОТА ====================
+TOKEN = "8636454027:AAGjKb_OTie2rUGh6yXd1m8MydzYhFeFa0Y"
+MECHANIC_ID = 1093924638
+LOGIST_IDS = [8504590692]          # можно добавить ещё через запятую
 
 MACHINES = [
     "КамАЗ А123 ВЕ 77",
@@ -20,6 +14,7 @@ MACHINES = [
     "Volvo FM-13",
     "Другая машина",
 ]
+# =======================================================
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
